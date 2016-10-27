@@ -30,6 +30,11 @@ enum {
 int token_val;
 int *current_id,    
     *symbols;   //符号表
+
+enum {Token, Hash, Name, Type, Class, Value, BType, BClass, BValue, IdSize};
+
+enum { CHAR, INT, PTR };
+int *idmain;
 // struct identifier{
 //     int token;
 //     int hash;
@@ -51,11 +56,188 @@ void next(){
 
        if(token == '\n'){
            ++line;
-       }eles if(token == "#"){  //跳过macro
+       }else if(token == "#"){  //跳过macro
            while(*src != 0 && src != '\n'){
                src++;
            }
-       }
+           //解析标识符
+       }else if((token >= 'a' && token <='z') || (token >= 'A' && token <= 'Z') \
+        || (token == '_')){
+            last_pos = src - 1;
+            hash = token;
+
+            while((*src >= 'a' && *src <= 'z') || (*src >= 'A' && *src <= 'Z') \
+            || (*src >= '0' && *src <= '9') || (*src == '_')){
+                hash = hash * 147 + *src;
+                src++;
+            }
+
+            //查找已经存在的标识符，线性查找
+            current_id = symbols;
+            while(current_id[Token]){
+                //如果已经存在，则直接返回
+                if(current_id[Hash] == hash && !memcmp((char *)current_id[Name], \
+                last_pos, src - last_pos)){
+                    token = current_id[Token];
+                    return;
+                }
+                current_id = current_id + IdSize;
+            }
+            //没有找到，安装标识符
+            current_id[Name] = (int)last_pos;
+            current_id[Hash] = hash;
+            token = current_id[Token] = Id;
+            return;
+            //解析数字
+        }else if(token >= '0' && token <= '9'){ 
+            token_val = token - '0';
+            if(token_val > 0){
+                while(*src >= '0' && *src <= '9'){
+                    token_val = token_val * 10 + *src++ - '0';
+                }
+            }else{
+                //十六进制
+                if(*src == 'x' ||*src == 'X'){
+                    token = *++src;
+                    while((token >= '0' && token <= '9') \
+                    || (token >= 'a' && token <= 'f') \
+                    || (token >= 'A' && token <= 'F') ){
+                        token_val = token_val * 16 + (token & 15) \
+                        + (token >= 'A' ? 9 : 0);
+                        token = *++src;
+                    }
+                }else{
+                    //八进制
+                    while(*src >= '0' && *src <= '7'){
+                        token_val = token_val * 8 + *src++ - '0';
+                    }
+                }
+            }
+            token = Num;
+            return;
+            //处理字符串
+        }else if(token == '"' || token == '\''){
+            last_pos = data;
+            while(*src != 0 && *src != token){
+                token_val = *src++;
+                //处理\n,其他的没处理
+                if(token_val == '\\'){
+                    token_val = *src++;
+                    if(token_val == 'n'){
+                        token_val = '\n';
+                    }
+                }
+
+                if(token == '"'){
+                    *data++ = token_val;
+                }
+            }
+            src++;
+            if(token == '"'){
+                token_val = (int)last_pos;
+            }else{
+                token = Num;
+            }
+
+            return;
+        }else if(token == '/'){
+            //跳过注释
+            if(*src == '/'){
+                while(*src != 0 && *src != '\n'){
+                    ++src;
+                }
+            //处理除号（/）
+            }else{
+                token = Div;
+                return;
+            }
+        }else if(token == '='){
+            if(*src == '='){
+                src++;
+                token = Eq;
+            }else{
+                token = Assign;
+            }
+            return ;
+        }else if(token == '+'){
+            if(*src == '+'){
+                src++;
+                token = Inc;
+            }else{
+                token = Add;
+            }
+            return;
+        }else if(token = '-'){
+            if(*src == '-'){
+                src++;
+                token = Dec;
+            }else{
+                token = Sub;
+            }
+            return;
+        }else if(token == '!'){
+            if(*src == '='){
+                src++;
+                token = Ne;
+            }
+            return;
+        }else if(token == '<'){
+            if(*src == '='){
+                src++;
+                token = Le;
+            }else if(*src == '<'){
+                src++;
+                token = Shl;
+            }else{
+                token = Lt;
+            }
+        }else if(token == '>'){
+            if(*src == '='){
+                src++;
+                token = Ge;
+            }else if(*src == '>'){
+                src++;
+                token = Shr;
+            }else{
+                token = Gt;
+            }
+            return ;
+        }else if(token == '|'){
+            if(*src == '|'){
+                src++;
+                token = Lor;
+            }else{
+                token = Or;
+            }
+            return;
+        }else if(token == '&'){
+            if(*src == '&'){
+                src++;
+                token = Lan;
+            }else{
+                token = And;
+            }
+            return;
+        }else if(token == '^'){
+            token = Xor;
+            return;
+        }else if(token == '%'){
+            token = Mod;
+            return;
+        }else if(token == '*'){
+            token = Mul;
+            return;
+        }else if(token == '['){
+            token = Brak;
+            return;
+        }else if(token == '?'){
+            token = Cond;
+            return;
+        }else if(token == '~' || token == ';' || token == '{' || \ 
+        token == '}' || token == '(' || token == ')' || token ==']' \
+        || token == ',' || token == ':'){
+            return;
+        }
        
    }
     return;
@@ -68,10 +250,10 @@ void expression(int level){
 void program(){
     next();
     while(token > 0){
-        printf("token is: %c\n", token);
+        printf("token is: %d\n", token);
         next();
     }
-}
+} 
 
 int eval(){
     int op, *tmp;
@@ -152,7 +334,6 @@ int main(int argc, char **argv){
     src[i] = 0;
     close(fd);
 
-    printf("vm start\n");
     if(!(text = old_text = malloc(poolsize))){
         printf("could not malloc %d for text area\n", poolsize);
         return -1;
@@ -166,16 +347,18 @@ int main(int argc, char **argv){
     if(!(stack = malloc(poolsize))){
         printf("could not malloc %d for stack area\n", poolsize);
     }
-     printf("vm start\n");
+
+    if (!(symbols = malloc(poolsize))) {
+        printf("could not malloc(%d) for symbol table\n", poolsize);
+        return -1;
+    }
     memset(text, 0, poolsize);
     memset(data, 0, poolsize);
     memset(stack, 0, poolsize);
 
-    printf("vm start\n");
     bp = sp = (int *)((int)stack + poolsize);
     ax = 0;
 
-    printf("vm start\n");
     i = 0;
     text[i++] = IMM;
     text[i++] = 10;
@@ -187,7 +370,25 @@ int main(int argc, char **argv){
     text[i++] = EXIT;
     pc = text;
 
+    src = "char else enum if int return sizeof while "
+          "open read close printf malloc memset memcmp exit void main";
 
+    i = Char;
+    while(i <= While){
+        next();
+        current_id[Token] = i++;
+    }
+
+    i = OPEN;
+    while(i <= EXIT){
+        next();
+        current_id[Class] = Sys;
+        current_id[Type] = INT;
+        current_id[Value] = i++;
+    }
+
+    next(); current_id[Token] = Char; //处理void
+    next(); idmain = current_id; //处理main
     program();
     return eval();
 }
