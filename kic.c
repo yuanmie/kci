@@ -20,9 +20,44 @@ int *pc, *bp, *sp, ax, cycle; //ÐéÄâ»ú¼Ä´æÆ÷
 enum { LEA ,IMM ,JMP ,CALL,JZ  ,JNZ ,ENT ,ADJ ,LEV ,LI  ,LC  ,SI  ,SC  ,PUSH,
        OR  ,XOR ,AND ,EQ  ,NE  ,LT  ,GT  ,LE  ,GE  ,SHL ,SHR ,ADD ,SUB ,MUL ,DIV ,MOD ,
        OPEN,READ,CLOS,PRTF,MALC,MSET,MCMP,EXIT };
+//token
+enum {
+  Num = 128, Fun, Sys, Glo, Loc, Id,
+  Char, Else, Enum, If, Int, Return, Sizeof, While,
+  Assign, Cond, Lor, Lan, Or, Xor, And, Eq, Ne, Lt, Gt, Le, Ge, Shl, Shr, Add, Sub, Mul, Div, Mod, Inc, Dec, Brak
+};
+
+int token_val;
+int *current_id,    
+    *symbols;   //·ûºÅ±í
+// struct identifier{
+//     int token;
+//     int hash;
+//     char *name;
+//     int class;
+//     int type;
+//     int value;
+//     int Bclass;
+//     int Btype;
+//     int Bvalue;
+// }
 
 void next(){
-    token = *src++;
+   char *last_pos;
+   int hash;
+
+   while(token = *src){
+       ++src;
+
+       if(token == '\n'){
+           ++line;
+       }eles if(token == "#"){  //Ìø¹ýmacro
+           while(*src != 0 && src != '\n'){
+               src++;
+           }
+       }
+       
+   }
     return;
 }
 
