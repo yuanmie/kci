@@ -1,5 +1,5 @@
 kic : kic.o
-	gcc -o kic kic.c
+	gcc -g -o kic kic.c
 
 kic.o : kic.c
 	gcc -c kic.c
