@@ -1,8 +1,4 @@
-kic : kic.o
-	gcc -m32 -g -o kic kic.c
-
-kic.o : kic.c
-	gcc -c kic.c
-
+kic : kci.c
+	gcc -m32 -g -o kci kci.c
 clean:
-	rm kic.o kic
+	rm kic
